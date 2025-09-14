@@ -93,7 +93,7 @@ jobs:
           helm repo add nexus ${{ secrets.NEXUS_HELM_REPO }} \
             --username ${{ secrets.NEXUS_HELM_REPO_USER }} \
             --password ${{ secrets.NEXUS_HELM_REPO_PASSWORD }}
-            
+
       - name: Push Helm chart to Nexus using cm-push
         run: |
           cd sausage-store-chart
@@ -129,4 +129,4 @@ jobs:
       - name: Deploy Helm chart
         run: |
           helm upgrade --install sausage-store nexus/sausage-store \
-            --namespace ${{ .SAUSAGE_STORE_NAMESPACE }}
+            --namespace ${{ env.SAUSAGE_STORE_NAMESPACE }}
