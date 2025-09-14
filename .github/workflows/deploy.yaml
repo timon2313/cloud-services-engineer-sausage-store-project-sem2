@@ -92,7 +92,8 @@ jobs:
         run: |
           helm repo add nexus ${{ secrets.NEXUS_HELM_REPO }} \
             --username ${{ secrets.NEXUS_HELM_REPO_USER }} \
-            --password ${{ secrets.NEXUS_HELM_REPO_PASSWORD }}
+            --password ${{ secrets.NEXUS_HELM_REPO_PASSWORD }} \
+            -v "$CHART_VERSION" \
 
       - name: Push Helm chart to Nexus using cm-push
         run: |
