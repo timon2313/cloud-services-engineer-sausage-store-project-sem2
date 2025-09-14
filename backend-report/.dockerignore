@@ -1,0 +1,14 @@
+*.md
+.env
+.DS_Store
+.git
+.gitignore
+coverage
+*.test
+*.out
+bin
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
