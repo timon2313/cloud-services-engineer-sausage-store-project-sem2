@@ -90,9 +90,9 @@ jobs:
 
       - name: Add Nexus Helm repo
         run: |
-          helm repo add nexus ${{ secrets.NEXUS_HELM_REPO }} \
-            --username ${{ secrets.NEXUS_HELM_REPO_USER }} \
-            --password ${{ secrets.NEXUS_HELM_REPO_PASSWORD }}
+          helm repo add nexus ${{ env.NEXUS_HELM_REPO }} \
+            --username ${{ env.NEXUS_HELM_REPO_USER }} \
+            --password ${{ env.NEXUS_HELM_REPO_PASSWORD }}
 
       - name: Push Helm chart to Nexus using cm-push
         run: |
