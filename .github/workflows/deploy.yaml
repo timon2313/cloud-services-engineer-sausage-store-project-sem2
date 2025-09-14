@@ -88,17 +88,27 @@ jobs:
         run: |
           helm plugin install https://github.com/chartmuseum/helm-push
 
-      - name: Add Nexus Helm repo
-        run: |
-          helm repo add nexus ${{ secrets.NEXUS_HELM_REPO }} \
-            --username ${{ secrets.NEXUS_HELM_REPO_USER }} \
-            --password ${{ secrets.NEXUS_HELM_REPO_PASSWORD }} \
-            -v "$CHART_VERSION" \
+      - name: Helm Lint
+        run: helm lint ./sausage-store-chart
 
-      - name: Push Helm chart to Nexus using cm-push
+      - name: Bump Helm Chart Version
+        id: set_version
         run: |
-          cd sausage-store-chart
-          helm cm-push --context-path="/repository/${{ secrets.NEXUS_HELM_REPO_NAME }}" . nexus
+          CHART_PATH="./sausage-store-chart/Chart.yaml"
+          CURRENT=$(grep '^version:' "$CHART_PATH" | awk '{print $2}')
+          NEXT=$(echo "$CURRENT" | awk -F. '{$NF += 1; print}' OFS='.')
+          echo "Updating chart version: $CURRENT → $NEXT"
+          sed -i "s/^version: .*/version: $NEXT/" "$CHART_PATH"
+          echo "NEW_VERSION=$NEXT" >> $GITHUB_OUTPUT
+
+      - name: Package and Push Helm Chart to Nexus
+        run: |
+          helm dependency update ./sausage-store-chart
+          helm package ./sausage-store-chart --destination ./packaged-chart
+          helm cm-push ./packaged-chart/sausage-store-*.tgz chartmuseum \
+            --username="${{ env.NEXUS_HELM_REPO_USER }}" \
+            --password="${{ env.NEXUS_HELM_REPO_PASSWORD }}" \
+            --context-path="/repository/B10nicle-sausage-store"
 
   # Деплоим приложения в кластер Kubernetes с помощью helm-чарт
   deploy_helm_chart_to_kubernetes:
@@ -116,18 +126,18 @@ jobs:
 
       - name: Add Nexus Helm repo
         run: |
-          helm repo add nexus ${{ secrets.NEXUS_HELM_REPO }} \
-            --username ${{ secrets.NEXUS_HELM_REPO_USER }} \
-            --password ${{ secrets.NEXUS_HELM_REPO_PASSWORD }}
+          helm repo add nexus ${{ env.NEXUS_HELM_REPO }} \
+            --username ${{ env.NEXUS_HELM_REPO_USER }} \
+            --password ${{ env.NEXUS_HELM_REPO_PASSWORD }}
           helm repo update
 
       - name: Setup kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          echo "${{ env.KUBE_CONFIG }}" > ~/.kube/config
         shell: bash
 
       - name: Deploy Helm chart
         run: |
           helm upgrade --install sausage-store nexus/sausage-store \
-            --namespace ${{ secrets.SAUSAGE_STORE_NAMESPACE }}
+            --namespace ${{ env.SAUSAGE_STORE_NAMESPACE }}
